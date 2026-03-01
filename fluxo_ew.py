@@ -29,14 +29,11 @@ class FluxoEW:
         except Exception as e:
             print(f"Erro ao selecionar o arquivo: {e}")
 
-    def estrututar_doc(self, dados):
-        # 1) lê o Excel inteiro usando pandas
+    def estruturar_doc(self, dados):
+        # 1) Lê a planilha
         df = pd.read_excel(self.file_path, sheet_name="Planejamento", engine="openpyxl")
-
-        # limpa nomes de coluna (remove espaços extras antes e depois)
         df.columns = df.columns.str.strip()
 
-        # agora selecione só as colunas existentes:
         colunas_desejadas = [
             "ID",
             "Import Test Case Name",
@@ -49,57 +46,12 @@ class FluxoEW:
             "Responsável",
             "Link do Card de Desenvolvimento",
         ]
+        df = df[[c for c in colunas_desejadas if c in df.columns]]
 
-        colunas_existentes = [c for c in colunas_desejadas if c in df.columns]
-        df = df[colunas_existentes]
+        # Remove NaN e substitui por texto vazio
+        df = df.astype(str).fillna("")
 
-        # 2) cria novo documento Word
-        doc = Document()
-
-        # cria tabela no Word para os campos gerais
-        table = doc.add_table(rows=0, cols=2)
-        table.style = "Table Grid"
-
-        # junta os dados fixos com os dados da planilha
-        dados_tabela = list(dados)
-
-        # adiciona os valores da planilha como pares (campo, valor)
-        for _, row in df.iterrows():
-            dados_tabela += [
-                ("Caso de Teste", row.get("Import Test Case Name", "")),
-                ("Objetivo", row.get("Test Case Target", "")),
-                ("Card de Desenvolvimento", row.get("Card de Desenvolvimento", "")),
-                ("Sistema", row.get("Sistema", "")),
-                ("QA/LOGIN", row.get("Responsável", "")),
-                ("URL do Card", row.get("Link do Card de Desenvolvimento", "")),
-            ]
-
-        # preenche a tabela com todos os pares (campo, valor)
-        for campo, valor in dados_tabela:
-            row_cells = table.add_row().cells
-            row_cells[0].text = str(campo)
-            row_cells[1].text = str(valor)
-
-        # agora escreve os steps no corpo do documento
-        for idx, row in df.iterrows():
-            step_text = (
-                f"{row.get('Step Name', '')}: {row.get('Action', '')}"
-            )
-            doc.add_paragraph(step_text)
-            doc.add_paragraph(f"Resultado esperado: {row.get('Expected Result','')}")
-            doc.add_paragraph("")  # linha em branco
-
-        # 3) salva o Word
         output_folder = "docs_gerados"
         os.makedirs(output_folder, exist_ok=True)
 
-        # usa o último sistema e ID como parte do nome do arquivo
-        ultimo_system = row.get("System", "")
-        ultimo_id = row.get("ID", "")
-        arquivo_saida = os.path.join(
-            output_folder,
-            f"Documento_de_testes.docx",
-        )
-        doc.save(arquivo_saida)
-
-        print("Documento gerado com sucesso!")
+        print("Documentos gerados com sucesso!")
