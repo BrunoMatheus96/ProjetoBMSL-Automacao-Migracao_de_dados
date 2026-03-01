@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import filedialog
-from openpyxl import load_workbook
 from docx import Document
+import pandas as pd
 import os
 
 
@@ -30,109 +30,76 @@ class FluxoEW:
             print(f"Erro ao selecionar o arquivo: {e}")
 
     def estrututar_doc(self, dados):
-        # 1) lê o Excel
-        wb = load_workbook(self.file_path, data_only=True)
-        sheet = wb["Planejamento"]
+        # 1) lê o Excel inteiro usando pandas
+        df = pd.read_excel(self.file_path, sheet_name="Planejamento", engine="openpyxl")
 
-        dados_planilha = []
-        for row in range(2, sheet.max_row + 1):
-            id = sheet.cell(row=row, column=6).value
-            test_case_name = sheet.cell(row=row, column=9).value
-            objective = sheet.cell(row=row, column=10).value
-            step_name = sheet.cell(row=row, column=12).value
-            action = sheet.cell(row=row, column=13).value
-            expected_result = sheet.cell(row=row, column=14).value
-            history = sheet.cell(row=row, column=16).value
-            system = sheet.cell(row=row, column=17).value
-            qa = sheet.cell(row=row, column=20).value
-            url_card = sheet.cell(row=row, column=25).value
-            dados_planilha.append(
-                (
-                    id,
-                    test_case_name,
-                    objective,
-                    step_name,
-                    action,
-                    expected_result,
-                    history,
-                    system,
-                    qa,
-                    url_card,
-                )
-            )
+        # limpa nomes de coluna (remove espaços extras antes e depois)
+        df.columns = df.columns.str.strip()
 
-        # 2) abre um novo Word
+        # agora selecione só as colunas existentes:
+        colunas_desejadas = [
+            "ID",
+            "Import Test Case Name",
+            "Test Case Target",
+            "Step Name",
+            "Action",
+            "Expected Result",
+            "Card de Desenvolvimento",
+            "Sistema",
+            "Responsável",
+            "Link do Card de Desenvolvimento",
+        ]
+
+        colunas_existentes = [c for c in colunas_desejadas if c in df.columns]
+        df = df[colunas_existentes]
+
+        # 2) cria novo documento Word
         doc = Document()
 
-        # Cria uma tabela com 2 colunas (exemplo para título/valor)
+        # cria tabela no Word para os campos gerais
         table = doc.add_table(rows=0, cols=2)
+        table.style = "Table Grid"
 
-        # Aqui você define um estilo que já tem bordas visíveis
-        table.style = "Table Grid"  # estilo padrão com bordas
+        # junta os dados fixos com os dados da planilha
+        dados_tabela = list(dados)
 
-        # preparar uma nova lista para tabela
-        dados_tabela = []
+        # adiciona os valores da planilha como pares (campo, valor)
+        for _, row in df.iterrows():
+            dados_tabela += [
+                ("Caso de Teste", row.get("Import Test Case Name", "")),
+                ("Objetivo", row.get("Test Case Target", "")),
+                ("Card de Desenvolvimento", row.get("Card de Desenvolvimento", "")),
+                ("Sistema", row.get("Sistema", "")),
+                ("QA/LOGIN", row.get("Responsável", "")),
+                ("URL do Card", row.get("Link do Card de Desenvolvimento", "")),
+            ]
 
-        # adiciona os dados fixos que já vêm na lista `dados`
-        dados_tabela.extend(dados)
-
-        # agora pega apenas os campos desejados de cada linha da planilha
-        for (
-            id,
-            test_case_name,
-            objective,
-            step_name,
-            action,
-            expected_result,
-            history,
-            system,
-            qa,
-            url_card,
-        ) in dados_planilha:
-            # cria pares (campo, valor) para os itens que você quer mostrar
-            dados_tabela.append(("Caso de Teste", test_case_name))
-            dados_tabela.append(("Objetivo", objective))
-            dados_tabela.append(("Histórico", history))
-            dados_tabela.append(("Sistema", system))
-            dados_tabela.append(("QA/LOGIN", qa))
-            dados_tabela.append(("URL do Card", url_card))
-
-        # Preenche as linhas
+        # preenche a tabela com todos os pares (campo, valor)
         for campo, valor in dados_tabela:
-            row_cells = table.add_row().cells  # adiciona uma nova linha
-            row_cells[0].text = campo
-            row_cells[1].text = valor.__str__()  # converte valor para string
+            row_cells = table.add_row().cells
+            row_cells[0].text = str(campo)
+            row_cells[1].text = str(valor)
 
-        # loop para cada linha do Excel
-        for i, (
-            id,
-            test_case_name,
-            objective,
-            step,
-            action,
-            expected,
-            history,
-            system,
-            qa,
-            url_card,
-        ) in enumerate(dados_planilha, start=1):
+        # agora escreve os steps no corpo do documento
+        for idx, row in df.iterrows():
+            step_text = (
+                f"{row.get('Step Name', '')}: {row.get('Action', '')}"
+            )
+            doc.add_paragraph(step_text)
+            doc.add_paragraph(f"Resultado esperado: {row.get('Expected Result','')}")
+            doc.add_paragraph("")  # linha em branco
 
-            # monta a frase no formato desejado
-            texto_step = f"Step {i} {step}: {action}"
-            doc.add_paragraph(texto_step)
-
-            # resultado esperado
-            doc.add_paragraph(f"Resultado esperado: {expected}")
-
-            # linha em branco entre casos
-            doc.add_paragraph("")
-
-        # Salva na pasta docs_gerados
+        # 3) salva o Word
         output_folder = "docs_gerados"
-        os.makedirs(output_folder, exist_ok=True)  # cria a pasta se não existir
-        caminho_arquivo = os.path.join(
-            output_folder, f"Documento de testes-{system}-TC{id}.docx"
-        )
-        doc.save(caminho_arquivo)
+        os.makedirs(output_folder, exist_ok=True)
 
-        print("Documentos gerados com sucesso!")
+        # usa o último sistema e ID como parte do nome do arquivo
+        ultimo_system = row.get("System", "")
+        ultimo_id = row.get("ID", "")
+        arquivo_saida = os.path.join(
+            output_folder,
+            f"Documento_de_testes.docx",
+        )
+        doc.save(arquivo_saida)
+
+        print("Documento gerado com sucesso!")
