@@ -64,20 +64,3 @@ class FluxoEW:
         # criar a tabela de duas colunas
         table = word.add_table(rows=0, cols=2)
         table.style = "Table Grid"
-
-        # preencher com cada linha e cada coluna do df_final
-        for _, row in df_final.iterrows():
-            for nome_col, valor in zip(df_final.columns, row):
-                # cada par (campo/valor) vira uma linha da tabela
-                row_cells = table.add_row().cells
-                row_cells[0].text = str(nome_col)
-                row_cells[1].text = str(valor)
-
-        # salva o documento
-        output_folder = "docs_gerados"
-        os.makedirs(output_folder, exist_ok=True)
-
-        arquivo_saida = os.path.join(output_folder, "Documento_de_testes.docx")
-        word.save(arquivo_saida)
-
-        print("Documento gerado com sucesso!")
