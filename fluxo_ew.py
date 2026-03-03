@@ -69,9 +69,9 @@ class FluxoEW:
                 table = doc.add_table(rows=0, cols=2)
                 table.style = "Table Grid"
 
-                # adiciona imagens no cabeçalho do documento
+                # 🚧adiciona imagens no cabeçalho do documento🚧
 
-                # adiciona o título no cabeçalho do documento
+                # 🚧adiciona o título no cabeçalho do documento🚧
 
                 # adiciona dados da planilha na tabela
                 for c in colunas_desejadas:
