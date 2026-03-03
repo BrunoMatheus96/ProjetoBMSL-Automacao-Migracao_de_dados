@@ -29,13 +29,12 @@ class FluxoEW:
         except Exception as e:
             print(f"Erro ao selecionar o arquivo: {e}")
 
-    def criar_tabela(self, dados):
+    def criar_documento(self, dados):
         # Passo 1 - Limpeza dos dados da planilha
         df = pd.read_excel(self.file_path, sheet_name="Planejamento")
         df.columns = (
             df.columns.str.strip()  # Remove espaços em branco dos nomes das colunas
         )
-        # Lista das colunas que quero da planilha
         colunas_desejadas = [
             "Import Test Case Name",
             "Test Case Target",
@@ -44,7 +43,6 @@ class FluxoEW:
             "Responsável",
             "Link do Card de Desenvolvimento",
         ]
-
         df_tabela = df[colunas_desejadas].copy()  # Novo DataFrame só com essas colunas
         df_tabela = df_tabela.dropna(
             how="all"
@@ -53,14 +51,40 @@ class FluxoEW:
             lambda col: col.apply(lambda x: x.strip() if isinstance(x, str) else x)
         )  # Remove espaços em branco de cada célula
 
-        # Passo 2 - Juntar os dados da planilha com os dados da main
-        df_dados = pd.DataFrame([dados])
-        df_final = pd.concat([df_tabela, df_dados], ignore_index=True)
-        df_final.tail()
+        # Passo 2 - Gerar os documentos Word
+        # Para cada linha do planilha, criar um Word
+        for i, row in df_tabela.iterrows():
 
-        # Passo 3 - Passar as informações do df_final para uma tabela no Word
-        word = Document()
+            # pega o valor de ID da planilha original
+            id_valor = df.loc[i, "ID"]
 
-        # criar a tabela de duas colunas
-        table = word.add_table(rows=0, cols=2)
-        table.style = "Table Grid"
+            # trata valores ausentes e converte para string
+            if pd.isna(id_valor):
+                id_str = ""
+            else:
+                id_str = str(int(id_valor))  # converte para inteiro antes de string
+
+            doc = Document()
+            table = doc.add_table(rows=0, cols=2)
+            table.style = "Table Grid"
+
+            # adiciona dados da planilha na tabela
+            for c in colunas_desejadas:
+                row_cells = table.add_row().cells
+                row_cells[0].text = str(c)
+                row_cells[1].text = str(row.get(c, ""))
+
+            # adiciona dados extras
+            for chave, valor in dados.items():
+                row_cells = table.add_row().cells
+                row_cells[0].text = str(chave)
+                row_cells[1].text = str(valor)
+
+            output_folder = "docs_gerados"
+            os.makedirs(output_folder, exist_ok=True)
+
+            nome_arquivo = f"Documento de teste - {row['Sistema']} - TC{id_str}.docx"
+            caminho = os.path.join(output_folder, nome_arquivo)
+
+            doc.save(caminho)
+            print(f"Documento gerado: {nome_arquivo}")
