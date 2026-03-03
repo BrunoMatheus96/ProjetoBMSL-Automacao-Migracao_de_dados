@@ -30,7 +30,7 @@ class FluxoEW:
             print(f"Erro ao selecionar o arquivo: {e}")
 
     def criar_documento(self, dados):
-        # Passo 1 - Limpeza dos dados da planilha
+        # Passo 1 - Ler a planilha Excel e criar um novo DataFrame
         df = pd.read_excel(self.file_path, sheet_name="Planejamento")
         df.columns = (
             df.columns.str.strip()  # Remove espaços em branco dos nomes das colunas
