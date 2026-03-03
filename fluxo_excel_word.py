@@ -24,7 +24,7 @@ class excel_word:
         elif self.file_path.lower().endswith((".xlsx", ".xls")):
             print("Arquivo Excel selecionado:", self.file_path)
         else:
-            print("O arquivo precisa ser do tipo Excel (.xlsx ou .xls).")
+            print("O arquivo precisa ser do tipo .xlsx ou .xls.")
 
     def criar_doc(self, dados):
         try:
