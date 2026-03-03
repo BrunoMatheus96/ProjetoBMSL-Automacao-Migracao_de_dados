@@ -5,7 +5,7 @@ from docx import Document
 import pandas as pd
 
 
-class FluxoEW:
+class excel_word:
     def __init__(self):
         self.file_path = ""
 
