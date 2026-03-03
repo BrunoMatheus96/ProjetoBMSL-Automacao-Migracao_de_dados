@@ -28,56 +28,49 @@ class excel_word:
 
     def criar_doc(self, dados):
         try:
-            # Passo 1 - Ler a planilha Excel e criar um novo DataFrame
-            df = pd.read_excel(self.file_path, sheet_name="Planejamento")
-            df.columns = (
-                df.columns.str.strip()  # Remove espaços em branco dos nomes das colunas
-            )
-            colunas_desejadas = [
-                "Import Test Case Name",
-                "Test Case Target",
-                "Card de Desenvolvimento",
-                "Sistema",
-                "Responsável",
-                "Link do Card de Desenvolvimento",
-            ]
-            df_tabela = df[
-                colunas_desejadas
-            ].copy()  # Novo DataFrame só com essas colunas
-            df_tabela = df_tabela.dropna(
-                how="all"
-            )  # Remove linhas onde todas as colunas estão vazias
-            df_tabela = df_tabela.apply(
-                lambda col: col.apply(lambda x: x.strip() if isinstance(x, str) else x)
-            )  # Remove espaços em branco de cada célula
 
-            # Passo 2 - Gerar os documentos Word
-            # Para cada linha do planilha, criar um Word
-            for i, row in df_tabela.iterrows():
+            def preparar_dados():
+                df = pd.read_excel(self.file_path, sheet_name="Planejamento")
+                df.columns = df.columns.str.strip()
 
-                # pega o valor de ID da planilha original
-                id_valor = df.loc[i, "ID"]
+                colunas = [
+                    "Import Test Case Name",
+                    "Test Case Target",
+                    "Card de Desenvolvimento",
+                    "Sistema",
+                    "Responsável",
+                    "Link do Card de Desenvolvimento",
+                ]
 
-                # trata valores ausentes e converte para string
-                if pd.isna(id_valor):
-                    id_str = ""
-                else:
-                    id_str = str(int(id_valor))  # converte para inteiro antes de string
+                df_tabela = df[colunas].copy()
+                df_tabela = df_tabela.dropna(how="all")
+                df_tabela = df_tabela.apply(
+                    lambda col: col.apply(
+                        lambda x: x.strip() if isinstance(x, str) else x
+                    )
+                )
 
-                # Cria um novo documento Word e as linhas da tabela
+                return df, df_tabela
+
+            # chamando a função interna
+            df, df_tabela = preparar_dados()
+
+            def criar_um_documento(df, row):
+                # função que cria apenas um doc a partir de uma linha
+                from docx import Document
+
+                id_valor = df.loc[row.name, "ID"]
+                id_str = "" if pd.isna(id_valor) else str(int(id_valor))
+
                 doc = Document()
                 table = doc.add_table(rows=0, cols=2)
                 table.style = "Table Grid"
 
-                # 🚧adiciona imagens no cabeçalho do documento🚧
-
-                # 🚧adiciona o título no cabeçalho do documento🚧
-
-                # adiciona dados da planilha na tabela
-                for c in colunas_desejadas:
+                # adiciona dados da planilha
+                for c in row.index:
                     row_cells = table.add_row().cells
                     row_cells[0].text = str(c)
-                    row_cells[1].text = str(row.get(c, ""))
+                    row_cells[1].text = str(row[c])
 
                 # adiciona dados extras
                 for chave, valor in dados.items():
@@ -85,18 +78,29 @@ class excel_word:
                     row_cells[0].text = str(chave)
                     row_cells[1].text = str(valor)
 
+                return doc, id_str
+
+            def salvar_documento(doc, id_str, sistema):
+                import os
+
                 output_folder = "docs_gerados"
                 os.makedirs(output_folder, exist_ok=True)
 
-                nome_arquivo = (
-                    f"Documento de teste - {row['Sistema']} - TC{id_str}.docx"
-                )
+                nome_arquivo = f"Documento de teste - {sistema} - TC{id_str}.docx"
                 caminho = os.path.join(output_folder, nome_arquivo)
 
                 doc.save(caminho)
                 print(f"Documento gerado: {nome_arquivo}")
+
+            # agora o loop chama as funções internas para cada linha
+            for _, row in df_tabela.iterrows():
+                doc, id_str = criar_um_documento(df, row)
+                salvar_documento(doc, id_str, row["Sistema"])
+
         except:
-            print("\nErro ao criar o(s) documento(s), verifique se o arquivo selecionado é .xlsx ou .xls e tente novamente.")
+            print(
+                "\nErro ao criar o(s) documento(s), verifique se o arquivo selecionado é .xlsx ou .xls e tente novamente."
+            )
 
     def adicionar_steps(self):
         print("🚧")
