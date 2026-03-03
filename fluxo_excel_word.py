@@ -96,7 +96,7 @@ class excel_word:
                 doc.save(caminho)
                 print(f"Documento gerado: {nome_arquivo}")
         except:
-            print("\nErro ao criar o(s) documento(s), verifique se o arquivo selecionado é Excel (.xlsx ou .xls) e tente novamente.")
+            print("\nErro ao criar o(s) documento(s), verifique se o arquivo selecionado é .xlsx ou .xls e tente novamente.")
 
     def adicionar_steps(self):
         print("🚧")
