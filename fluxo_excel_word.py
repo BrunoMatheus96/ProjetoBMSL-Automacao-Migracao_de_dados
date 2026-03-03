@@ -114,7 +114,7 @@ class excel_word:
             def salvar_documento(doc, id_str, sistema):
                 import os
 
-                output_folder = "documentos_de_evidência"
+                output_folder = "docs_word"
                 os.makedirs(output_folder, exist_ok=True)
 
                 nome_arquivo = f"Documento de teste - {sistema} - TC{id_str}.docx"
