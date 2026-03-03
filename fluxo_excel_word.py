@@ -3,6 +3,9 @@ import tkinter as tk
 from tkinter import filedialog
 from docx import Document
 import pandas as pd
+from docx.shared import Inches
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import Pt
 
 
 class excel_word:
@@ -62,7 +65,35 @@ class excel_word:
                 id_valor = df.loc[row.name, "ID"]
                 id_str = "" if pd.isna(id_valor) else str(int(id_valor))
 
+                # Cria o documento
                 doc = Document()
+
+                # Acessa o cabeçalho da primeira seção
+                header = doc.sections[0].header
+                # Adiciona um parágrafo ao cabeçalho
+                header_para = header.paragraphs[0]
+
+                # Adiciona imagens ao cabeçalho
+                run = header_para.add_run()
+                header_para.add_run().add_picture("imagens/minsait.png", width=Inches(2.20))
+                run = header_para.add_run(" " * 30)
+                header_para.add_run().add_picture("imagens/petrobras.png", width=Inches(2.1))
+
+                # Título centralizado
+                title_para = header.add_paragraph()
+                title_run = title_para.add_run("\nDocumento de Evidência")
+                title_run.bold = True
+                title_run.font.size = Pt(20)  # ajusta o tamanho da fonte
+                title_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+                #Linha horizontal
+                line_para = header.add_paragraph()
+                run = line_para.add_run("_" * 100)   # linha horizontal simulada
+                run.bold = True
+                line_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+
+                # Cria a tabela e define o estilo
                 table = doc.add_table(rows=0, cols=2)
                 table.style = "Table Grid"
 
@@ -83,7 +114,7 @@ class excel_word:
             def salvar_documento(doc, id_str, sistema):
                 import os
 
-                output_folder = "docs_gerados"
+                output_folder = "Documentos de Evidência"
                 os.makedirs(output_folder, exist_ok=True)
 
                 nome_arquivo = f"Documento de teste - {sistema} - TC{id_str}.docx"
