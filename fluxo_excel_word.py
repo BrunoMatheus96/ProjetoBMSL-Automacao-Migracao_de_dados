@@ -29,7 +29,7 @@ class excel_word:
         else:
             print("O arquivo precisa ser do tipo .xlsx ou .xls.")
 
-    def criar_doc(self, dados):
+    def criar_doc(self, dados, base_path):
         try:
 
             def preparar_dados():
@@ -75,9 +75,13 @@ class excel_word:
 
                 # Adiciona imagens ao cabeçalho
                 run = header_para.add_run()
-                header_para.add_run().add_picture("imagens/minsait.png", width=Inches(2.20))
+                header_para.add_run().add_picture(
+                    "imagens/minsait.png", width=Inches(2.20)
+                )
                 run = header_para.add_run(" " * 30)
-                header_para.add_run().add_picture("imagens/petrobras.png", width=Inches(2.1))
+                header_para.add_run().add_picture(
+                    "imagens/petrobras.png", width=Inches(2.1)
+                )
 
                 # Título centralizado
                 title_para = header.add_paragraph()
@@ -86,12 +90,11 @@ class excel_word:
                 title_run.font.size = Pt(20)  # ajusta o tamanho da fonte
                 title_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-                #Linha horizontal
+                # Linha horizontal
                 line_para = header.add_paragraph()
-                run = line_para.add_run("_" * 100)   # linha horizontal simulada
+                run = line_para.add_run("_" * 100)  # linha horizontal simulada
                 run.bold = True
                 line_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-
 
                 # Cria a tabela e define o estilo
                 table = doc.add_table(rows=0, cols=2)
@@ -111,27 +114,25 @@ class excel_word:
 
                 return doc, id_str
 
-            def salvar_documento(doc, id_str, sistema):
+            def salvar_documento(base_path, doc, id_str, sistema):
                 import os
 
-                output_folder = "docs_word"
-                os.makedirs(output_folder, exist_ok=True)
+                # Cria o diretório base se não existir
+                os.makedirs(base_path, exist_ok=True)
 
                 nome_arquivo = f"Documento de teste - {sistema} - TC{id_str}.docx"
-                caminho = os.path.join(output_folder, nome_arquivo)
+                full_path = os.path.join(base_path, nome_arquivo)
 
-                doc.save(caminho)
+                doc.save(full_path)
                 print(f"Documento gerado: {nome_arquivo}")
 
             # agora o loop chama as funções internas para cada linha
             for _, row in df_tabela.iterrows():
                 doc, id_str = criar_um_documento(df, row)
-                salvar_documento(doc, id_str, row["Sistema"])
+                salvar_documento(base_path, doc, id_str, row["Sistema"])
 
-        except:
-            print(
-                "\nErro ao criar o(s) documento(s), verifique se o arquivo selecionado é .xlsx ou .xls e tente novamente."
-            )
+        except Exception as e:
+            print("Erro ao criar documentos:", e)
 
     def adicionar_steps(self):
         print("🚧")
