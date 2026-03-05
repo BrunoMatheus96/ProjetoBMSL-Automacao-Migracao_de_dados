@@ -113,8 +113,6 @@ class excel_word:
                     row_cells[1].text = str(valor)
 
                 return doc, id_str
-            
-                # 🚧Adicionar os steps a partir da segunda página🚧
 
             def salvar_documento(base_path, doc, id_str, sistema):
                 import os
@@ -136,5 +134,75 @@ class excel_word:
         except Exception as e:
             print("Erro ao criar documentos:", e)
 
-    def adicionar_steps(self):
-        print("🚧")
+
+    def adicionar_steps(self, base_path):
+        try:
+
+            def preparar_dados_steps():
+                df = pd.read_excel(self.file_path, sheet_name="Planejamento")
+                df.columns = df.columns.str.strip()
+
+                colunas = [
+                    "ID",
+                    "Sistema",          # se existir
+                    "Step Name",
+                    "Action",
+                    "Expected Result",
+                ]
+
+                df_steps = df[colunas].copy()
+                df_steps = df_steps.dropna(how="all")
+                df_steps = df_steps.apply(
+                    lambda col: col.apply(
+                        lambda x: x.strip() if isinstance(x, str) else x
+                    )
+                )
+                df_steps["ID"] = df_steps["ID"].ffill()
+                df_steps["ID"] = pd.to_numeric(
+                    df_steps["ID"], errors="coerce"
+                ).astype("Int64")
+
+                return df_steps
+
+            # ————— chama a função e obtém os dados
+            df_steps = preparar_dados_steps()
+
+            def editar_docs(base_path, df_steps):
+                for doc in os.listdir(base_path):
+                    if doc.endswith(".docx"):
+                        doc_path = os.path.join(base_path, doc)
+                        document = Document(doc_path)
+
+                        # Extrai o ID do nome do arquivo
+                        id_str = doc.split("TC")[-1].split(".docx")[0]
+
+                        # Filtra os steps correspondentes ao ID
+                        steps = df_steps[df_steps["ID"] == int(id_str)]
+
+                        if not steps.empty:
+                            # Insere título "Steps" já com nova página
+                            head = document.add_heading("Steps", level=1)
+                            head.paragraph_format.page_break_before = True
+
+                            for _, step in steps.iterrows():
+                                p = document.add_paragraph()
+
+                                # Step Name em negrito
+                                p.add_run(f"{step['Step Name']}: ").bold = True
+
+                                # Action em negrito
+                                p.add_run("\nAção: ").bold = True
+                                p.add_run(f"{step['Action']}\n")
+
+                                # Expected Result em negrito
+                                p.add_run("\n\nResultado Esperado: ").bold = True
+                                p.add_run(f"{step['Expected Result']}\n\n")
+
+                            document.save(doc_path)
+                            print(f"Steps adicionados ao documento: {doc}")
+
+            # ————— chama editar_docs para realmente processar os arquivos
+            editar_docs(base_path, df_steps)
+
+        except Exception as e:
+            print("Erro ao adicionar steps:", e)
