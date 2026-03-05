@@ -29,11 +29,11 @@ class excel_word:
         else:
             print("O arquivo precisa ser do tipo .xlsx ou .xls.")
 
-    def criar_doc(self, dados, base_path):
+    def criar_doc(self, aba, dados, base_path):
         try:
 
-            def preparar_dados():
-                df = pd.read_excel(self.file_path, sheet_name="Planejamento")
+            def preparar_dados(aba):
+                df = pd.read_excel(self.file_path, sheet_name=aba)
                 df.columns = df.columns.str.strip()
 
                 colunas = [
@@ -56,7 +56,7 @@ class excel_word:
                 return df, df_tabela
 
             # chamando a função interna
-            df, df_tabela = preparar_dados()
+            df, df_tabela = preparar_dados(aba)
 
             def criar_um_documento(df, row):
                 # função que cria apenas um doc a partir de uma linha
@@ -134,7 +134,6 @@ class excel_word:
         except Exception as e:
             print("Erro ao criar documentos:", e)
 
-
     def adicionar_steps(self, base_path):
         try:
 
@@ -144,7 +143,7 @@ class excel_word:
 
                 colunas = [
                     "ID",
-                    "Sistema",          # se existir
+                    "Sistema",  # se existir
                     "Step Name",
                     "Action",
                     "Expected Result",
@@ -158,9 +157,9 @@ class excel_word:
                     )
                 )
                 df_steps["ID"] = df_steps["ID"].ffill()
-                df_steps["ID"] = pd.to_numeric(
-                    df_steps["ID"], errors="coerce"
-                ).astype("Int64")
+                df_steps["ID"] = pd.to_numeric(df_steps["ID"], errors="coerce").astype(
+                    "Int64"
+                )
 
                 return df_steps
 
