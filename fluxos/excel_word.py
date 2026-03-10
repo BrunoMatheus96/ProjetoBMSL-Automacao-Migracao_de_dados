@@ -57,7 +57,7 @@ class excel_word:
 
 
             def preparar_dados_steps():
-                df = pd.read_excel(self.file_path, sheet_name="Planejamento")
+                df = pd.read_excel(self.file_path, sheet_name=planilha)
                 df.columns = df.columns.str.strip()
 
                 colunas = [
